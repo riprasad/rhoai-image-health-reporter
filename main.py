@@ -69,55 +69,53 @@ def get_image_grades(repository: str) -> List[Dict[str, str]]:
 
 
 
-def filter_supported_image_grades(image_grades: List[Dict[str, str]], supported_stream_tags: List[str]) -> List[Dict[str, str]]:
+def filter_content_stream_grades(image_grades: List[Dict[str, str]], content_stream_tags: List[str]) -> List[Dict[str, str]]:
     """
     Filters and returns the image grades of supported versions.
     """
     # Create a set from content_stream_tags for efficient lookup
-    tag_set = set(supported_stream_tags)
+    tag_set = set(content_stream_tags)
     
     # Filter image_grades based on whether the tag is in the tag_set
-    supported_stream_grades = [grade for grade in image_grades if grade['tag'] in tag_set]
+    content_stream_grades = [grade for grade in image_grades if grade['tag'] in tag_set]
 
-    return supported_stream_grades
+    return content_stream_grades
 
 
 
 def main():
-    # TODO - Make it COnfigurable
+    # TODO - Make it Configurable
     product_listing_id = "63b85b573112fe5a95ee9a3a"
         
-    
     
     product_listing_data = get_repositories_and_supported_streams(product_listing_id)
     LOGGER.debug(f"Repository Data: {product_listing_data}")
     
     if product_listing_data.get("data"):
         
-        # Retrieve the value associated with the key "data" from the dictionary.
-        # The value is expected to be a list of dictionaries
-        repository_data_list = product_listing_data.get("data")
+        # Extract the list of repositories from the "data" key in the dictionary
+        repositories = product_listing_data.get("data")
         
-        for grades in repository_data_list:
-            repository = grades.get("repository")
-            supported_stream_tags = grades.get("content_stream_tags")
-            print(f"Repository: {repository}")
-            print(f"Supported Stream Tags: {supported_stream_tags}")
-            print()
+        for repo in repositories:
+            repository = repo.get("repository")
+            content_stream_tags = repo.get("content_stream_tags")
             
             all_image_grades = get_image_grades(repository)
             LOGGER.debug(f"Health Grades For All Images In The Repository '{repository}': {all_image_grades}")
+            
             if all_image_grades:
-                supported_image_grades = filter_supported_image_grades(all_image_grades, supported_stream_tags)
+                supported_image_grades = filter_content_stream_grades(all_image_grades, content_stream_tags)
                 LOGGER.debug(f"Supported Image Grades For Repository '{repository}': {supported_image_grades}")
-                for grades in supported_image_grades:
-                    LOGGER.info(grades)
+                for repo in supported_image_grades:
+                    repo['repository'] = repository
+                    repo['content_stream_tags'] = content_stream_tags
+                    LOGGER.info(repo)
             else:
-                 LOGGER.error("An error occured while fetching the health grade of the images in repository '{repository}'.")
+                 LOGGER.error(f"An error occured while fetching the health grade of the images in repository '{repository}'.")
                  raise Exception()
             
     else:
-        LOGGER.error("An error occured while fetching the data for product listing id '{product_listing_id}'.")
+        LOGGER.error(f"An error occured while fetching the data for product listing id '{product_listing_id}'.")
         raise Exception()
     
     

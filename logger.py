@@ -2,7 +2,7 @@ import logging
 import os
 
 # Global variables for log levels and file path
-CONSOLE_LOG_LEVEL = os.environ.get('CONSOLE_LOG_LEVEL', 'INFO').upper()
+CONSOLE_LOG_LEVEL = os.environ.get('CONSOLE_LOG_LEVEL', 'DEBUG').upper()
 FILE_LOG_LEVEL = os.environ.get('FILE_LOG_LEVEL', 'DEBUG').upper()
 FILE_LOG_DIR = os.environ.get('FILE_LOG_DIR', '.')
 
@@ -15,11 +15,11 @@ class ColoredFormatter(logging.Formatter):
     
     # Dictionary to define colors for different log levels
     COLORS = {
-        logging.DEBUG: "\033[94m",    # Blue
-        logging.INFO: "\033[92m",     # Green
-        logging.WARNING: "\033[93m",  # Yellow
-        logging.ERROR: "\033[91m",    # Red
-        logging.CRITICAL: "\033[95m", # Magenta
+        logging.DEBUG: "\033[95m",      # Magenta
+        logging.INFO: "\033[97m",       # White
+        logging.WARNING: "\033[93m",    # Yellow
+        logging.ERROR: "\033[91m",      # Red
+        logging.CRITICAL: "\033[91m",   # Red
     }
     RESET = "\033[0m"  # Reset color
 
