@@ -69,24 +69,12 @@ def get_image_grades(repository: str) -> List[Dict[str, str]]:
 
 
 
-def filter_content_stream_grades(image_grades: List[Dict[str, str]], content_stream_tags: List[str]) -> List[Dict[str, str]]:
-    """
-    Filters and returns the image grades of supported versions.
-    """
-    # Create a set from content_stream_tags for efficient lookup
-    tag_set = set(content_stream_tags)
-    
-    # Filter image_grades based on whether the tag is in the tag_set
-    content_stream_grades = [grade for grade in image_grades if grade['tag'] in tag_set]
-
-    return content_stream_grades
-
-
-
 def main():
     # TODO - Make it Configurable
     product_listing_id = "63b85b573112fe5a95ee9a3a"
-        
+    
+    # Initializing an empty dictionary to store details by health grade.
+    health_report: Dict[str, list[Any]] = {grade: [] for grade in "ABCDEF"}
     
     product_listing_data = get_repositories_and_supported_streams(product_listing_id)
     LOGGER.debug(f"Repository Data: {product_listing_data}")
@@ -104,12 +92,25 @@ def main():
             LOGGER.debug(f"Health Grades For All Images In The Repository '{repository}': {all_image_grades}")
             
             if all_image_grades:
-                supported_image_grades = filter_content_stream_grades(all_image_grades, content_stream_tags)
-                LOGGER.debug(f"Supported Image Grades For Repository '{repository}': {supported_image_grades}")
-                for repo in supported_image_grades:
-                    repo['repository'] = repository
-                    repo['content_stream_tags'] = content_stream_tags
-                    LOGGER.info(repo)
+                
+                repo_stream_tags = []
+                for image in all_image_grades:
+                    if image['tag'] in content_stream_tags:
+                        # Handle missing next_drop_date by assigning a faux date
+                        next_drop_date = image.get('next_drop_date', '2099-12-31T00:00:00+00:00')
+                        days_remaining = util.calculate_days_remaining(next_drop_date)
+                        repo_stream_tags.append(image['tag'])
+                        
+                        # Add the processed grade info to the dictionary
+                        health_report[image['current_grade']].append({
+                            'repository': repository,
+                            'repo_stream_tags': repo_stream_tags,
+                            'tag': image['tag'],
+                            'current_grade': image['current_grade'],
+                            'next_drop_date': next_drop_date.split("T")[0],
+                            'days_remaining': days_remaining
+                        })
+    
             else:
                  LOGGER.error(f"An error occured while fetching the health grade of the images in repository '{repository}'.")
                  raise Exception()
@@ -117,6 +118,14 @@ def main():
     else:
         LOGGER.error(f"An error occured while fetching the data for product listing id '{product_listing_id}'.")
         raise Exception()
+    
+    
+    
+    # Sort each grade's list by days_remaining
+    for grade in health_report:
+        health_report[grade].sort(key=lambda x: x['days_remaining'])
+        
+    LOGGER.info(f"Health Report: {health_report}")
     
     
     
