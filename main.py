@@ -73,8 +73,9 @@ def main():
     # TODO - Make it Configurable
     product_listing_id = "63b85b573112fe5a95ee9a3a"
     
-    # Initializing an empty dictionary to store details by health grade.
-    health_report: Dict[str, list[Any]] = {grade: [] for grade in "ABCDEF"}
+    # Initializing empty dictionaries to store details by health grade.
+    grade_report: Dict[str, list[Any]] = {grade: [] for grade in "ABCDEF"}
+    grade_counts: Dict[str, int] = {grade: 0 for grade in "ABCDEF"}
     
     product_listing_data = get_repositories_and_supported_streams(product_listing_id)
     LOGGER.debug(f"Repository Data: {product_listing_data}")
@@ -102,7 +103,7 @@ def main():
                         repo_stream_tags.append(image['tag'])
                         
                         # Add the processed grade info to the dictionary
-                        health_report[image['current_grade']].append({
+                        grade_report[image['current_grade']].append({
                             'repository': repository,
                             'repo_stream_tags': repo_stream_tags,
                             'tag': image['tag'],
@@ -110,22 +111,26 @@ def main():
                             'next_drop_date': next_drop_date.split("T")[0],
                             'days_remaining': days_remaining
                         })
+                        
+                        # Update the grade count
+                        grade_counts[image['current_grade']] += 1
     
             else:
                  LOGGER.error(f"An error occured while fetching the health grade of the images in repository '{repository}'.")
-                 raise Exception()
+                 exit(1)
             
     else:
         LOGGER.error(f"An error occured while fetching the data for product listing id '{product_listing_id}'.")
-        raise Exception()
+        exit(1)
     
     
     
     # Sort each grade's list by days_remaining
-    for grade in health_report:
-        health_report[grade].sort(key=lambda x: x['days_remaining'])
+    for grade in grade_report:
+        grade_report[grade].sort(key=lambda x: x['days_remaining'])
         
-    LOGGER.info(f"Health Report: {health_report}")
+    LOGGER.info(f"Grade Report: {grade_report}")
+    LOGGER.info(f"Grade Count: {grade_counts}")
     
     
     

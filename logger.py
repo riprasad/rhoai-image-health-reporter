@@ -2,7 +2,7 @@ import logging
 import os
 
 # Global variables for log levels and file path
-CONSOLE_LOG_LEVEL = os.environ.get('CONSOLE_LOG_LEVEL', 'DEBUG').upper()
+CONSOLE_LOG_LEVEL = os.environ.get('CONSOLE_LOG_LEVEL', 'INFO').upper()
 FILE_LOG_LEVEL = os.environ.get('FILE_LOG_LEVEL', 'DEBUG').upper()
 FILE_LOG_DIR = os.environ.get('FILE_LOG_DIR', '.')
 
