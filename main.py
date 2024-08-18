@@ -210,7 +210,7 @@ def main():
         LOGGER.info("=======================================================================================")
         LOGGER.info("Preparing HTML report.")
         rendered_html = util.render_template(EMAIL_TEMPLATE_FILE_PATH, grade_report, grade_count)
-        LOGGER.debug(f"  Rendered HTML Report: {rendered_html}")
+        LOGGER.debug(f"  Rendered HTML Report: \n{rendered_html}")
         LOGGER.info("   Success: HTML report generated successfully.")
             
         LOGGER.info("Sending email...")

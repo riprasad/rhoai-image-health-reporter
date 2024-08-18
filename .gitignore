@@ -1,4 +1,5 @@
 .mypy_cache
 app.log
 test.py
+report.html
 **/*.env

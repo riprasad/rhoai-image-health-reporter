@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
 
 jobs:
-  verify-nudges:
+  generate-report:
     runs-on: ubuntu-latest
 
     steps:
@@ -32,8 +32,22 @@ jobs:
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         run: pipenv run python main.py
 
-      - name: Upload debug logs as artifact
+      - name: Extract HTML report from app.log
+        run: |
+          # Create the report.html file by extracting HTML content from app.log
+          sed -n '/<html/,/<\/html>/p' app.log > report.html
+        continue-on-error: true
+      
+      - name: HTML Preview
+        id: html_preview
+        uses: pavi2410/html-preview-action@v2
+        with:
+          html_file: 'report.html'
+
+      - name: Upload logs and report as artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: app.log
-          path: app.log
+          name: artifacts
+          path: |
+            app.log
+            report.html
