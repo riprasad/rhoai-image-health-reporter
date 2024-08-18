@@ -44,6 +44,9 @@ jobs:
         with:
           html_file: 'report.html'
 
+      - name: Print preview URL
+        run: echo ${{ steps.html_preview.outputs.url }}
+
       - name: Upload logs and report as artifacts
         uses: actions/upload-artifact@v3
         with:
