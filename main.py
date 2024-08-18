@@ -1,13 +1,14 @@
-from typing import Any, Dict, List
-import logger
+import datetime
 import requests
-import util
+from typing import Any, Dict, List, Tuple
+# local packages
+from logger import logger
 from mailer import mailer
+from util import util
 
 
 LOGGER = logger.getLogger(__name__)
-
-# https://catalog.redhat.com/api/containers/v1/ui/
+TEMPLATE_FILE_PATH="mailer/template/image_health_report.html"
 SERVER_URL = "https://catalog.redhat.com/api/containers/v1"
 REGISTRY = "registry.access.redhat.com"
 
@@ -70,30 +71,49 @@ def get_image_grades(repository: str) -> List[Dict[str, str]]:
 
 
 
-def main():
-    # TODO - Make it Configurable
-    product_listing_id = "63b85b573112fe5a95ee9a3a"
+def prepare_health_report(product_listing_id: str) -> Tuple[Dict[str, List[Any]], Dict[str, int]]:
+    """
+    Generates a comprehensive health report for the specified product listing.
+
+    This function retrieves all repositories associated with the given product listing ID and
+    subsequently gathers health information for each image within these repositories. It then
+    filters out non-supported versions and compiles two data dictionaries:
+
+    - grade_report: Groups images across repositories by their health grades. Each key represents a 
+    health grade (A-F), and the value is a list of images with that grade, including details such as
+    repository name, supported stream tags, image tag, image grade, next drop date and days remaining.
+
+    - grade_count: Provides a summary of the number of images assigned to each health grade (A-F).
+    Each key represents a grade, and the value is the count of images with that grade.
+    """
     
     # Initializing empty dictionaries to store details by health grade.
     grade_report: Dict[str, list[Any]] = {grade: [] for grade in "FEDCBA"}
     grade_count: Dict[str, int] = {grade: 0 for grade in "ABCDEF"}
     
+    
+    
+    LOGGER.info(f"Fetching repositories data for product listing id: {product_listing_id}")
     product_listing_data = get_repositories_and_supported_streams(product_listing_id)
-    LOGGER.debug(f"Repository Data: {product_listing_data}")
+    LOGGER.debug(f"  Repository Data: {product_listing_data}")
     
     if product_listing_data.get("data"):
         
         # Extract the list of repositories from the "data" key in the dictionary
         repositories = product_listing_data.get("data")
+        LOGGER.info(f"   Success: Fetched data for {len(repositories)} repositories.")
         
+        
+        LOGGER.info("Fetching health data for images across repositories.")
         for repo in repositories:
             repository = repo.get("repository")
             content_stream_tags = repo.get("content_stream_tags")
             
             all_image_grades = get_image_grades(repository)
-            LOGGER.debug(f"Health Grades For All Images In The Repository '{repository}': {all_image_grades}")
+            LOGGER.debug(f"  Health Grades For All Images In The Repository '{repository}': {all_image_grades}")
             
             if all_image_grades:
+                LOGGER.info(f"   Success: {repository}")
                 
                 repo_stream_tags = []
                 for image in all_image_grades:
@@ -117,28 +137,56 @@ def main():
                         grade_count[image['current_grade']] += 1
     
             else:
-                 LOGGER.error(f"An error occured while fetching the health grade of the images in repository '{repository}'.")
+                 LOGGER.error(f"An error occured while fetching health grade of images in repository '{repository}'.")
                  exit(1)
             
     else:
         LOGGER.error(f"An error occured while fetching the data for product listing id '{product_listing_id}'.")
         exit(1)
+        
+    return grade_report, grade_count
+
+
+
+
+def main():
+    # TODO - Make it Configurable
+    product_listing_id = "63b85b573112fe5a95ee9a3a"
+    product_listing_name = "RHOAI"
+    
+    LOGGER.info("=======================================================================================")
+    LOGGER.info(f"Generating Image Health Report For Product: {product_listing_name}")
+    LOGGER.info("=======================================================================================")
+    grade_report, grade_count = prepare_health_report(product_listing_id)
     
     
-    
-    # Sort each grade's list by days_remaining
+    LOGGER.info("Data compilation complete. Sorting each grade's list by days_remaining.")
     for grade in grade_report:
         grade_report[grade].sort(key=lambda x: x['days_remaining'])
+    LOGGER.debug(f"  Report  : {grade_report}")
+    LOGGER.debug(f"  Summary : {grade_count}")
+    LOGGER.info("Report Generated Successfully.")
+    
+    
+    LOGGER.info("=======================================================================================")
+    LOGGER.info("Sending Report via Email")
+    LOGGER.info("=======================================================================================")
+    
+    LOGGER.info("Preparing HTML report.")
+    rendered_html = util.render_template(TEMPLATE_FILE_PATH, grade_report, grade_count)
+    LOGGER.debug("  Rendered HTML Report: {rendered_html}")
+    LOGGER.info("   Success: HTML report generated successfully.")
         
-    LOGGER.info(f"Grade Report: {grade_report}")
-    LOGGER.info(f"Grade Count: {grade_count}")
+    LOGGER.info("Sending email...")
+    EMAIL_SUBJECT = f"Daily Image Health Report [{datetime.datetime.now(datetime.timezone.utc).strftime('%d-%m-%Y')}]"
     mailer.send_html_email(
-        subject="Your Daily Container Health Report",
+        subject=EMAIL_SUBJECT,
         toaddrs=["riprasad@redhat.com"],
-        template_file="mailer/template/image_health_report.html",
-        grade_report=grade_report,
-        grade_count=grade_count,
+        rendered_html=rendered_html
     )
+    LOGGER.info("Email sent successfully. Email's Summary:")
+    LOGGER.info(f"   Subject: {EMAIL_SUBJECT}")
+    
     
     
     

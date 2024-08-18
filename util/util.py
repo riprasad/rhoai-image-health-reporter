@@ -1,9 +1,7 @@
 from datetime import datetime
+from typing import Any, Dict
+from jinja2 import Environment, FileSystemLoader
 from urllib.parse import urljoin
-import logger
-
-
-LOGGER = logger.getLogger(__name__)
 
 
 
@@ -34,3 +32,16 @@ def calculate_days_remaining(next_drop_date_str: str) -> int:
     today = datetime.today().date()
     days_remaining = (next_drop_date - today).days
     return days_remaining
+
+
+
+def render_template(template_file_path: str, grade_report: Dict[str, Any], grade_count: Dict[str, int]) -> str:
+    """
+    Renders a template file with the provided grade report and grade count.
+
+    This function loads a Jinja2 template from the file system, renders it using the provided
+    grade report and grade count, and returns the rendered template as a string.
+    """
+    env = Environment(loader=FileSystemLoader("."))
+    template = env.get_template(template_file_path)
+    return template.render(grade_report=grade_report, grade_count=grade_count)
