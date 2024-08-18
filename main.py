@@ -2,6 +2,7 @@ from typing import Any, Dict, List
 import logger
 import requests
 import util
+from mailer import mailer
 
 
 LOGGER = logger.getLogger(__name__)
@@ -74,8 +75,8 @@ def main():
     product_listing_id = "63b85b573112fe5a95ee9a3a"
     
     # Initializing empty dictionaries to store details by health grade.
-    grade_report: Dict[str, list[Any]] = {grade: [] for grade in "ABCDEF"}
-    grade_counts: Dict[str, int] = {grade: 0 for grade in "ABCDEF"}
+    grade_report: Dict[str, list[Any]] = {grade: [] for grade in "FEDCBA"}
+    grade_count: Dict[str, int] = {grade: 0 for grade in "ABCDEF"}
     
     product_listing_data = get_repositories_and_supported_streams(product_listing_id)
     LOGGER.debug(f"Repository Data: {product_listing_data}")
@@ -113,7 +114,7 @@ def main():
                         })
                         
                         # Update the grade count
-                        grade_counts[image['current_grade']] += 1
+                        grade_count[image['current_grade']] += 1
     
             else:
                  LOGGER.error(f"An error occured while fetching the health grade of the images in repository '{repository}'.")
@@ -130,7 +131,14 @@ def main():
         grade_report[grade].sort(key=lambda x: x['days_remaining'])
         
     LOGGER.info(f"Grade Report: {grade_report}")
-    LOGGER.info(f"Grade Count: {grade_counts}")
+    LOGGER.info(f"Grade Count: {grade_count}")
+    mailer.send_html_email(
+        subject="Your Daily Container Health Report",
+        toaddrs=["riprasad@redhat.com"],
+        template_file="mailer/template/image_health_report.html",
+        grade_report=grade_report,
+        grade_count=grade_count,
+    )
     
     
     

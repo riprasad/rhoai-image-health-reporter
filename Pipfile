@@ -5,6 +5,8 @@ name = "pypi"
 
 [packages]
 requests = "*"
+yagmail = "*"
+jinja2 = "*"
 
 [dev-packages]
 mypy = "*"
