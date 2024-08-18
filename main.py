@@ -8,10 +8,24 @@ from logger import logger
 from util import util
 
 
-LOGGER = logger.getLogger(__name__)
 
+LOGGER = logger.getLogger(__name__)
+CONFIG_FILE = "config.yaml"
+
+# RHCC API Constants
 SERVER_URL = "https://catalog.redhat.com/api/containers/v1"
 REGISTRY = "registry.access.redhat.com"
+
+# Mail Configs    
+EMAIL_USER = os.getenv("EMAIL_USER")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+EMAIL_TEMPLATE_FILE_PATH="email-template/image_health_report.html"
+EMAIL_SUBJECT = f"Daily Image Health Report [{datetime.datetime.now(datetime.timezone.utc).strftime('%d-%m-%Y')}]"
+
+# Check if the environment variables are set
+if not EMAIL_USER or not EMAIL_PASSWORD:
+    LOGGER.error("Environment variables EMAIL_USER or EMAIL_PASSWORD are not set.")
+    exit(1)
 
 
 
@@ -48,6 +62,7 @@ def get_repositories_and_supported_streams(product_listing_id: str) -> Dict[str,
     
 
 
+
 def get_image_grades(repository: str) -> List[Dict[str, str]]:
     """
     Fetches and returns the health grade information for all images in the specified repository.
@@ -71,6 +86,7 @@ def get_image_grades(repository: str) -> List[Dict[str, str]]:
     repository_images_grade = response.json()
     
     return repository_images_grade
+
 
 
 
@@ -151,6 +167,7 @@ def prepare_health_report(product_listing_id: str) -> Tuple[Dict[str, List[Any]]
 
 
 
+
 def send_html_email(email_user: str, email_password: str, subject: str, toaddrs: str, html_content: str):
     """
     Sends an HTML email with the specified subject and recipients.
@@ -164,52 +181,43 @@ def send_html_email(email_user: str, email_password: str, subject: str, toaddrs:
 
 
 
-def main():
-    # TODO - Make it Configurable
-    product_listing_id = "63b85b573112fe5a95ee9a3a"
-    product_listing_name = "RHOAI"
-    
-    email_user = os.getenv("EMAIL_USER")
-    email_password = os.getenv("EMAIL_PASSWORD")
-    template_file_path="email-template/image_health_report.html"
-    
-    # Check if the environment variables are set
-    if not email_user or not email_password:
-        LOGGER.error("Environment variables EMAIL_USER or EMAIL_PASSWORD are not set.")
-        exit(1)
-    
-    LOGGER.info("=======================================================================================")
-    LOGGER.info(f"Generating Image Health Report For Product: {product_listing_name}")
-    LOGGER.info("=======================================================================================")
-    grade_report, grade_count = prepare_health_report(product_listing_id)
-    
-    
-    LOGGER.info("Data compilation complete. Sorting each grade's list by days_remaining.")
-    for grade in grade_report:
-        grade_report[grade].sort(key=lambda x: x['days_remaining'])
-    LOGGER.debug(f"  Report  : {grade_report}")
-    LOGGER.debug(f"  Summary : {grade_count}")
-    LOGGER.info("Report Generated Successfully.")
-    
-    
-    LOGGER.info("=======================================================================================")
-    LOGGER.info("Sending Report via Email")
-    LOGGER.info("=======================================================================================")
 
-    
-    subject = f"Daily Image Health Report [{datetime.datetime.now(datetime.timezone.utc).strftime('%d-%m-%Y')}]"
-    toaddrs=["riprasad@redhat.com"]
-    
-    LOGGER.info("Preparing HTML report.")
-    rendered_html = util.render_template(template_file_path, grade_report, grade_count)
-    LOGGER.debug("  Rendered HTML Report: {rendered_html}")
-    LOGGER.info("   Success: HTML report generated successfully.")
+def main():
         
-    LOGGER.info("Sending email...")
-    send_html_email(email_user, email_password, subject, toaddrs, rendered_html)
-    LOGGER.info("Email sent successfully. Email's Summary:")
-    LOGGER.info(f"   Subject    : {subject}")
-    LOGGER.info(f"   Recipients : {toaddrs}")
+    configs = util.get_configs(CONFIG_FILE)
+    LOGGER.debug(f"Configs: {configs}")
+    for config in configs:
+        product_listing_name = config.get('name')
+        product_listing_id = config.get('product-listing-id')
+        email_recipients = config.get('email-recipients')
+    
+        LOGGER.info("=======================================================================================")
+        LOGGER.info(f"Generating Image Health Report For Product: {product_listing_name}")
+        LOGGER.info("=======================================================================================")
+        grade_report, grade_count = prepare_health_report(product_listing_id)
+        
+        
+        LOGGER.info("Data compilation complete. Sorting each grade's list by days_remaining.")
+        for grade in grade_report:
+            grade_report[grade].sort(key=lambda x: x['days_remaining'])
+        LOGGER.debug(f"  Report  : {grade_report}")
+        LOGGER.debug(f"  Summary : {grade_count}")
+        LOGGER.info("Report Generated Successfully.")
+        
+        
+        LOGGER.info("=======================================================================================")
+        LOGGER.info("Sending Report via Email")
+        LOGGER.info("=======================================================================================")
+        LOGGER.info("Preparing HTML report.")
+        rendered_html = util.render_template(EMAIL_TEMPLATE_FILE_PATH, grade_report, grade_count)
+        LOGGER.debug("  Rendered HTML Report: {rendered_html}")
+        LOGGER.info("   Success: HTML report generated successfully.")
+            
+        LOGGER.info("Sending email...")
+        send_html_email(email_user=EMAIL_USER, email_password=EMAIL_PASSWORD, subject=EMAIL_SUBJECT, toaddrs=email_recipients, html_content=rendered_html)
+        LOGGER.info("Email sent successfully. Email's Summary:")
+        LOGGER.info(f"   Subject    : {EMAIL_SUBJECT}")
+        LOGGER.info(f"   Recipients : {email_recipients}")
     
     
     

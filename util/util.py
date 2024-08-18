@@ -1,7 +1,16 @@
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, List, Dict
 from jinja2 import Environment, FileSystemLoader
 from urllib.parse import urljoin
+import yaml
+
+
+def get_configs(file_path: str) -> List:
+    """
+    Parses the passed YAML file and returns its content.
+    """
+    with open(file_path) as file:
+        return yaml.safe_load(file)
 
 
 
