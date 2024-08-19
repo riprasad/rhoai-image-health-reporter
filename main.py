@@ -2,7 +2,6 @@ import argparse
 import datetime
 import requests
 from typing import Any, Dict, List, Tuple
-import yagmail
 # local packages
 from logger import logger
 from util import util
