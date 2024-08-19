@@ -1,3 +1,4 @@
+import argparse
 import datetime
 import requests
 from typing import Any, Dict, List, Tuple
@@ -157,7 +158,13 @@ def prepare_health_report(product_listing_id: str) -> Tuple[Dict[str, List[Any]]
 
 
 def main():
-        
+    
+    # Parse the command-line argument --send-mail. If provided, send_mail is set to True; otherwise, it's False.
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--send-mail', action='store_true', help='Flag to indicate whether to send mail.', dest='send_mail')
+    args = parser.parse_args()
+    send_mail = args.send_mail
+    
     configs = util.get_configs(CONFIG_FILE)
     LOGGER.debug(f"Configs: {configs}")
     for config in configs:
@@ -188,9 +195,14 @@ def main():
         LOGGER.debug(f"  Rendered HTML Report: \n{rendered_html}")
         LOGGER.info("   Success: HTML report generated successfully.")
             
-        LOGGER.info("Sending email...")
-        mailer.send_html_email(subject=email_subject, toaddrs=email_recipients, rendered_html=rendered_html)
-        LOGGER.info("Email sent successfully. Email's Summary:")
+        if send_mail:
+            LOGGER.info("Sending email...")
+            mailer.send_html_email(subject=email_subject, toaddrs=email_recipients, rendered_html=rendered_html)
+            LOGGER.info("Email sent successfully. Email's Summary:")
+        else:
+            LOGGER.info(f"Skipping email dispatch as 'send_mail' parameter is set to '{send_mail}'.")
+            LOGGER.info("Email summary:")
+        
         LOGGER.info(f"   Subject    : {email_subject}")
         LOGGER.info(f"   Recipients : {email_recipients}")
     

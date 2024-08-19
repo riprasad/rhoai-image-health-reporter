@@ -3,7 +3,13 @@ name: Generate Image Health Report
 on:
   schedule:
     - cron: '30 2 * * *'  # Runs at 9 AM IST (2:30 AM UTC)
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      send_mail:
+        type: boolean
+        description: 'Send email report?'
+        required: true
+        default: false
 
 jobs:
   generate-report:
@@ -30,22 +36,17 @@ jobs:
         env:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-        run: pipenv run python main.py
+        run: |
+          if [ "${{ github.event.inputs.send_mail }}" = "true" ] || [ "${{ github.event_name }}" = "schedule" ]; then
+            pipenv run python main.py --send-mail
+          else
+            pipenv run python main.py
+          fi
 
       - name: Extract HTML report from app.log
         run: |
           # Create the report.html file by extracting HTML content from app.log
           sed -n '/<html/,/<\/html>/p' app.log > report.html
-        continue-on-error: true
-      
-      - name: HTML Preview
-        id: html_preview
-        uses: pavi2410/html-preview-action@v2
-        with:
-          html_file: 'report.html'
-
-      - name: Print preview URL
-        run: echo ${{ steps.html_preview.outputs.url }}
 
       - name: Upload logs and report as artifacts
         uses: actions/upload-artifact@v3
