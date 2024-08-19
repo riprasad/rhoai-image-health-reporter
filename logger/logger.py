@@ -1,11 +1,6 @@
 import logging
 import os
 
-# Global variables for log levels and file path
-CONSOLE_LOG_LEVEL = os.environ.get('CONSOLE_LOG_LEVEL', 'INFO').upper()
-FILE_LOG_LEVEL = os.environ.get('FILE_LOG_LEVEL', 'DEBUG').upper()
-FILE_LOG_DIR = os.environ.get('FILE_LOG_DIR', '.')
-
 
 class ColoredFormatter(logging.Formatter):
     """
@@ -40,21 +35,27 @@ def getLogger(name: str) -> logging.Logger:
     The following environment variables are used:
     - `CONSOLE_LOG_LEVEL`: Log level for console output. Defaults to 'INFO'.
     - `FILE_LOG_LEVEL`: Log level for file output. Defaults to 'DEBUG'.
-    - `FILE_LOG_DIR`: Directory path for log file output. Defaults to the current directory.
+    - `LOG_FILE_DIR`: Directory path for log file output. Defaults to the current directory.
+    - `LOG_FILE_NAME`: Filename for log output. Defaults to app.log
     """
+    console_log_level = os.environ.get('CONSOLE_LOG_LEVEL', 'INFO').upper()
+    file_log_level = os.environ.get('FILE_LOG_LEVEL', 'DEBUG').upper()
+    log_file_dir = os.environ.get('LOG_FILE_DIR', '.')
+    log_file_name = os.environ.get('LOG_FILE_NAME', 'app.log')
+
     # Create logger
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)  # Set the minimum logging level for the logger
 
     # Create console handler and set its level and formatter
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(CONSOLE_LOG_LEVEL)
+    console_handler.setLevel(console_log_level)
     console_formatter = ColoredFormatter('{levelname} - {message}', style='{')
     console_handler.setFormatter(console_formatter)
 
     # Create file handler and set its level and formatter
-    file_handler = logging.FileHandler(filename=os.path.join(FILE_LOG_DIR, "app.log"), mode='w')
-    file_handler.setLevel(FILE_LOG_LEVEL)
+    file_handler = logging.FileHandler(filename=os.path.join(log_file_dir, log_file_name), mode='w')
+    file_handler.setLevel(file_log_level)
     file_formatter = logging.Formatter('{levelname} - {message}', style='{')
     file_handler.setFormatter(file_formatter)
 

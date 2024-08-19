@@ -1,31 +1,19 @@
 import datetime
-import os
 import requests
 from typing import Any, Dict, List, Tuple
 import yagmail
 # local packages
 from logger import logger
 from util import util
+from mailer import mailer
 
 
 
 LOGGER = logger.getLogger(__name__)
 CONFIG_FILE = "config.yaml"
-
-# RHCC API Constants
 SERVER_URL = "https://catalog.redhat.com/api/containers/v1"
 REGISTRY = "registry.access.redhat.com"
-
-# Mail Configs    
-EMAIL_USER = os.getenv("EMAIL_USER")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
-EMAIL_TEMPLATE_FILE_PATH="email-template/image_health_report.html"
-EMAIL_SUBJECT = f"Daily Image Health Report [{datetime.datetime.now(datetime.timezone.utc).strftime('%d-%m-%Y')}]"
-
-# Check if the environment variables are set
-if not EMAIL_USER or not EMAIL_PASSWORD:
-    LOGGER.error("Environment variables EMAIL_USER or EMAIL_PASSWORD are not set.")
-    exit(1)
+EMAIL_TEMPLATE_FILE_PATH="mailer/template/image_health_report.html"
 
 
 
@@ -168,20 +156,6 @@ def prepare_health_report(product_listing_id: str) -> Tuple[Dict[str, List[Any]]
 
 
 
-def send_html_email(email_user: str, email_password: str, subject: str, toaddrs: str, html_content: str):
-    """
-    Sends an HTML email with the specified subject and recipients.
-    """
-    yag = yagmail.SMTP(email_user, email_password)
-    
-    # https://github.com/kootenpv/yagmail/issues/124
-    html_report = html_content.replace("\n", "")
-
-    yag.send(to=toaddrs, subject=subject, contents=html_report)
-
-
-
-
 def main():
         
     configs = util.get_configs(CONFIG_FILE)
@@ -190,6 +164,7 @@ def main():
         product_listing_name = config.get('name')
         product_listing_id = config.get('product-listing-id')
         email_recipients = config.get('email-recipients')
+        email_subject = f"[{product_listing_name}] Daily Image Health Report: {datetime.datetime.now(datetime.timezone.utc).strftime('%d-%m-%Y')}"
     
         LOGGER.info("=======================================================================================")
         LOGGER.info(f"Generating Image Health Report For Product: {product_listing_name}")
@@ -214,9 +189,9 @@ def main():
         LOGGER.info("   Success: HTML report generated successfully.")
             
         LOGGER.info("Sending email...")
-        send_html_email(email_user=EMAIL_USER, email_password=EMAIL_PASSWORD, subject=EMAIL_SUBJECT, toaddrs=email_recipients, html_content=rendered_html)
+        mailer.send_html_email(subject=email_subject, toaddrs=email_recipients, rendered_html=rendered_html)
         LOGGER.info("Email sent successfully. Email's Summary:")
-        LOGGER.info(f"   Subject    : {EMAIL_SUBJECT}")
+        LOGGER.info(f"   Subject    : {email_subject}")
         LOGGER.info(f"   Recipients : {email_recipients}")
     
     
