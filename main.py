@@ -170,7 +170,7 @@ def main():
         product_listing_name = config.get('name')
         product_listing_id = config.get('product-listing-id')
         email_recipients = config.get('email-recipients')
-        email_subject = f"[{product_listing_name}] Daily Image Health Report: {datetime.datetime.now(datetime.timezone.utc).strftime('%d-%m-%Y')}"
+        email_subject = f"[{product_listing_name}] Weekly Image Health Report: {datetime.datetime.now(datetime.timezone.utc).strftime('%d-%m-%Y')}"
     
         LOGGER.info("=======================================================================================")
         LOGGER.info(f"Generating Image Health Report For Product: {product_listing_name}")
