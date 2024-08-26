@@ -55,3 +55,10 @@ jobs:
           path: |
             app.log
             report.html
+
+      - name: Slack Notification
+        if: ${{ failure() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_MESSAGE: ':red-warning: Failed To Generate Image Health Report!'
+          SLACK_WEBHOOK: ${{ secrets.RHOAI_DEVOPS_SLACK_WEBHOOK }}
