@@ -5,8 +5,10 @@
 - name: RHBOAR
   product-listing-id: 66697a7154e5fd53fd1ebdd2
   email-recipients:
-    - riprasad@redhat.com
     - nipatil@redhat.com
     - pantinor@redhat.com
     - ewittman@redhat.com
     - rkubis@redhat.com
+    - jsenko@redhat.com
+    - carnalca@redhat.com
+    - aperuffo@redhat.com
