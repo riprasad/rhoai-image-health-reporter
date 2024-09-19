@@ -13,8 +13,7 @@ LOGGER = logger.getLogger(__name__)
 CONFIG_FILE = "config.yaml"
 SERVER_URL = "https://catalog.redhat.com/api/containers/v1"
 REGISTRY = "registry.access.redhat.com"
-EMAIL_TEMPLATE_FILE_PATH="mailer/template/image_health_report.html"
-
+EMAIL_TEMPLATE_FILE_PATH = "mailer/template/image_health_report.html"
 
 
 
@@ -190,7 +189,10 @@ def main():
         LOGGER.info("Sending Report via Email")
         LOGGER.info("=======================================================================================")
         LOGGER.info("Preparing HTML report.")
-        rendered_html = util.render_template(EMAIL_TEMPLATE_FILE_PATH, grade_report, grade_count)
+        message = ""
+        if product_listing_name == "RHOAI": 
+            message = "No action is needed from the scrum teams. The DevTestOps team will take the necessary steps to restore the image health grades."
+        rendered_html = util.render_template(EMAIL_TEMPLATE_FILE_PATH, message, grade_report, grade_count)
         LOGGER.debug(f"  Rendered HTML Report: \n{rendered_html}")
         LOGGER.info("   Success: HTML report generated successfully.")
             

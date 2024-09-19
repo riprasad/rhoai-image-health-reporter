@@ -44,7 +44,7 @@ def calculate_days_remaining(next_drop_date_str: str) -> int:
 
 
 
-def render_template(template_file_path: str, grade_report: Dict[str, Any], grade_count: Dict[str, int]) -> str:
+def render_template(template_file_path: str, message: str, grade_report: Dict[str, Any], grade_count: Dict[str, int]) -> str:
     """
     Renders a template file with the provided grade report and grade count.
 
@@ -53,4 +53,4 @@ def render_template(template_file_path: str, grade_report: Dict[str, Any], grade
     """
     env = Environment(loader=FileSystemLoader("."))
     template = env.get_template(template_file_path)
-    return template.render(grade_report=grade_report, grade_count=grade_count)
+    return template.render(message=message, grade_report=grade_report, grade_count=grade_count)
