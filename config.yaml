@@ -1,7 +1,8 @@
 - name: RHOAI
   product-listing-id: 63b85b573112fe5a95ee9a3a
   email-recipients:
-    - openshift-ai-devel@redhat.com 
+    - openshift-ai-devel@redhat.com
+    - riprasad@redhat.com
 - name: RHBOAR
   product-listing-id: 66697a7154e5fd53fd1ebdd2
   email-recipients:
